@@ -376,7 +376,7 @@ dotnet build src/McpFramework.csproj
 - **Added**: Tool discovery and metadata processing
 - **Added**: 41 comprehensive tests with 100% pass rate
 - **Added**: Professional documentation and examples
-- **Changed**: Namespace from `Altu.Core.Utilities.McpFramework` to `McpFramework`
+- **Changed**: Namespace from `McpFramework` to `McpFramework`
 - **Fixed**: Edge case handling in string range validation
 - **Improved**: Error messaging and validation suggestions
 

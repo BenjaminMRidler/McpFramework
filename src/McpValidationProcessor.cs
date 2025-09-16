@@ -78,19 +78,6 @@ namespace McpFramework
                         result.Suggestions.AddRange(requiredResult.Suggestions);
                     }
                 }
-
-                // Check for existence validation attribute
-                var existsAttr = property.GetCustomAttribute<McpExistsAttribute>();
-                if (existsAttr != null)
-                {
-                    var existenceResult = await mcpValue.ValidateExistenceAsync(parameterName, toolName);
-                    if (!existenceResult.IsValid)
-                    {
-                        result.IsValid = false;
-                        result.Errors.AddRange(existenceResult.Errors);
-                        result.Suggestions.AddRange(existenceResult.Suggestions);
-                    }
-                }
             }
 
             // Check range validation

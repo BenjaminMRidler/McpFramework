@@ -1,10 +1,11 @@
+H:\Repositories\Altu\McpFramework\src\bin\Debug\net9.0\McpFramework.deps.json
+H:\Repositories\Altu\McpFramework\src\bin\Debug\net9.0\McpFramework.dll
+H:\Repositories\Altu\McpFramework\src\bin\Debug\net9.0\McpFramework.pdb
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.GeneratedMSBuildEditorConfig.editorconfig
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.AssemblyInfoInputs.cache
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.AssemblyInfo.cs
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.csproj.CoreCompileInputs.cache
-H:\Repositories\Altu\McpFramework\src\bin\Debug\net9.0\McpFramework.deps.json
-H:\Repositories\Altu\McpFramework\src\bin\Debug\net9.0\McpFramework.dll
-H:\Repositories\Altu\McpFramework\src\bin\Debug\net9.0\McpFramework.pdb
+H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.sourcelink.json
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.dll
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\refint\McpFramework.dll
 H:\Repositories\Altu\McpFramework\src\obj\Debug\net9.0\McpFramework.pdb

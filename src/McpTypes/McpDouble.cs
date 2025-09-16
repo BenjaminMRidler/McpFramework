@@ -66,12 +66,6 @@ namespace McpFramework.McpTypes
             return result;
         }
 
-        public override Task<McpValidationResult> ValidateExistenceAsync(string parameterName, string toolName)
-        {
-            // Doubles don't need existence validation - they're mathematical values
-            return Task.FromResult(new McpValidationResult { IsValid = true });
-        }
-
         public override McpValidationResult ValidateRange(McpRangeAttribute rangeAttr, string parameterName, string toolName)
         {
             var result = new McpValidationResult { IsValid = true };

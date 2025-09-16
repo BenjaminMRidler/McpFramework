@@ -13,16 +13,16 @@ namespace McpFramework.McpTypes
         Input = "Use UTC DateTime for consistency. Supports date range validation",
         Output = "Provides validated DateTime values with proper formatting"
     )]
-    public class McpDateTime : McpTypedValue<DateTime>
+    public class McpDateTime : McpTypedValue<DateTime?>
     {
-        public McpDateTime(DateTime value) : base(value) { }
-        public McpDateTime() : base(DateTime.UtcNow) { }
+        public McpDateTime(DateTime? value) : base(value) { }
+        public McpDateTime() : base() { }
 
         // Implicit conversion from DateTime for convenience
-        public static implicit operator McpDateTime(DateTime value) => new McpDateTime(value);
+        public static implicit operator McpDateTime(DateTime? value) => new McpDateTime(value);
 
         // Implicit conversion to DateTime for service calls
-        public static implicit operator DateTime(McpDateTime mcpDateTime) => mcpDateTime.Value;
+        public static implicit operator DateTime?(McpDateTime mcpDateTime) => mcpDateTime.Value ?? null;
 
         public override McpValidationResult ValidateFormat(string parameterName, string toolName)
         {
@@ -63,12 +63,6 @@ namespace McpFramework.McpTypes
             }
 
             return result;
-        }
-
-        public override Task<McpValidationResult> ValidateExistenceAsync(string parameterName, string toolName)
-        {
-            // DateTime values don't need existence validation
-            return Task.FromResult(new McpValidationResult { IsValid = true });
         }
 
         public override McpValidationResult ValidateRange(McpRangeAttribute rangeAttr, string parameterName, string toolName)

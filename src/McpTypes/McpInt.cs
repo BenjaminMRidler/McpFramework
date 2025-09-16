@@ -42,15 +42,6 @@ namespace McpFramework.McpTypes
             return result;
         }
 
-        public override Task<McpValidationResult> ValidateExistenceAsync(string parameterName, string toolName)
-        {
-            var result = new McpValidationResult { IsValid = true };
-
-            // Basic validation - integers are always valid if they're in range
-            // Range validation is handled by McpRange attribute
-            return Task.FromResult(result);
-        }
-
         public override McpValidationResult ValidateRange(McpRangeAttribute rangeAttr, string parameterName, string toolName)
         {
             var result = new McpValidationResult { IsValid = true };

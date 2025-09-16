@@ -52,12 +52,6 @@ namespace McpFramework.McpTypes
             return result;
         }
 
-        public override Task<McpValidationResult> ValidateExistenceAsync(string parameterName, string toolName)
-        {
-            // Most string values don't need existence validation
-            // Override in derived classes if needed
-            return Task.FromResult(new McpValidationResult { IsValid = true });
-        }
 
         public override McpValidationResult ValidateRange(McpRangeAttribute rangeAttr, string parameterName, string toolName)
         {
