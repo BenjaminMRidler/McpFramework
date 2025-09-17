@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "sutNSkcmNOM=",
+  "dgSpecHash": "KHK3cMviygc=",
   "success": true,
   "projectFilePath": "H:\\Repositories\\Altu\\McpFramework\\src\\McpFramework.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\benja\\.nuget\\packages\\microsoft.openapi\\1.6.14\\microsoft.openapi.1.6.14.nupkg.sha512",
+    "C:\\Users\\benja\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\6.6.2\\swashbuckle.aspnetcore.swagger.6.6.2.nupkg.sha512",
+    "C:\\Users\\benja\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\6.6.2\\swashbuckle.aspnetcore.swaggergen.6.6.2.nupkg.sha512"
+  ],
   "logs": []
 }

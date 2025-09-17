@@ -4,12 +4,12 @@ using McpFramework.Attributes;
 
 namespace McpFramework.McpTypes
 {
-    public abstract class McpStringValue : McpTypedValue<string>
+    public abstract class McpString : McpTypedValue<string>
     {
         // Parameterless constructor for JSON deserialization
-        protected McpStringValue() : base() { }
+        protected McpString() : base() { }
         
-        protected McpStringValue(string value) : base(value) { }
+        protected McpString(string value) : base(value) { }
 
         public override McpValidationResult ValidateFormat(string parameterName, string toolName)
         {
@@ -135,6 +135,6 @@ namespace McpFramework.McpTypes
             return result;
         }
 
-        public override bool Equals(McpValue? other) => other is McpStringValue typed && Value.Equals(typed.Value);
+        public override bool Equals(McpValue? other) => other is McpString typed && Value.Equals(typed.Value);
     }
 }

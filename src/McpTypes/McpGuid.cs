@@ -5,12 +5,12 @@ using McpFramework.Attributes;
 
 namespace McpFramework.McpTypes
 {
-    public abstract class McpGuidValue : McpTypedValue<Guid>
+    public abstract class McpGuid : McpTypedValue<Guid>
     {
         // Parameterless constructor for JSON deserialization
-        protected McpGuidValue() : base() { }
+        protected McpGuid() : base() { }
         
-        protected McpGuidValue(Guid value) : base(value)
+        protected McpGuid(Guid value) : base(value)
         {
         }
         
@@ -72,9 +72,9 @@ namespace McpFramework.McpTypes
         }
         
         // Common equality for GUID values
-        public override bool Equals(McpValue? other) => other is McpGuidValue typed && Value.Equals(typed.Value);
+        public override bool Equals(McpValue? other) => other is McpGuid typed && Value.Equals(typed.Value);
         
         // Implicit conversion to Guid - inherited by all derived GUID types
-        public static implicit operator Guid(McpGuidValue guidValue) => guidValue.Value;
+        public static implicit operator Guid(McpGuid guidValue) => guidValue.Value;
     }
 }

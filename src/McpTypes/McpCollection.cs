@@ -9,7 +9,7 @@ namespace McpFramework.McpTypes
     /// Base collection class for MCP-typed values in the Types namespace
     /// </summary>
     /// <typeparam name="T">The MCP-typed value type</typeparam>
-    public abstract class McpCollection<T> : IEnumerable<T> where T : class
+    public class McpCollection<T> : IEnumerable<T> where T : class
     {
         private readonly List<T> _items;
 
@@ -18,10 +18,11 @@ namespace McpFramework.McpTypes
             _items = new List<T>();
         }
 
-        protected McpCollection(IEnumerable<T> items)
+        public McpCollection(IEnumerable<T> items)
         {
             _items = new List<T>(items ?? Enumerable.Empty<T>());
         }
+
 
         public int Count => _items.Count;
 

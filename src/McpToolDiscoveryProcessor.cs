@@ -97,24 +97,24 @@ namespace McpFramework
             var tool = new McpToolDefinition
             {
                 Name = toolAttr.Name,
-                Description = !string.IsNullOrEmpty(toolAttr.Description) 
-                    ? toolAttr.Description 
+                Description = !string.IsNullOrEmpty(toolAttr.Description)
+                    ? toolAttr.Description
                     : $"Execute {method.Name} operation",
-                Category = !string.IsNullOrEmpty(toolAttr.Category) 
-                    ? toolAttr.Category 
+                Category = !string.IsNullOrEmpty(toolAttr.Category)
+                    ? toolAttr.Category
                     : "General",
-                OperationType = !string.IsNullOrEmpty(toolAttr.OperationType) 
-                    ? toolAttr.OperationType 
+                OperationType = !string.IsNullOrEmpty(toolAttr.OperationType)
+                    ? toolAttr.OperationType
                     : "Read",
                 Examples = toolAttr.Examples?.ToList() ?? new List<string>()
             };
 
             // Extract input schema from method parameters
             tool.InputSchema = CreateInputSchema(method);
-            
+
             // Extract response guidance from McpResponseGuidance attributes
             tool.ResponseGuidance = ExtractResponseGuidance(method);
-            
+
             // Enhance description with response schema information
             var responseSchema = GenerateResponseSchemaDocumentation(method);
             if (!string.IsNullOrEmpty(responseSchema))
@@ -128,10 +128,10 @@ namespace McpFramework
         private List<McpResponseGuidance> ExtractResponseGuidance(MethodInfo method)
         {
             var guidanceList = new List<McpResponseGuidance>();
-            
+
             // Extract all McpResponseGuidance attributes from the method
             var guidanceAttributes = method.GetCustomAttributes<McpResponseGuidanceAttribute>();
-            
+
             foreach (var attr in guidanceAttributes)
             {
                 var guidance = new McpResponseGuidance
@@ -142,10 +142,10 @@ namespace McpFramework
                     Condition = attr.Condition,
                     Examples = attr.Examples?.ToList() ?? new List<string>()
                 };
-                
+
                 guidanceList.Add(guidance);
             }
-            
+
             // Sort by priority (highest first)
             return guidanceList.OrderByDescending(g => g.Priority).ToList();
         }
@@ -157,25 +157,25 @@ namespace McpFramework
             if (responseTypeAttr != null)
             {
                 var documentation = GenerateTypeDocumentation(responseTypeAttr.ResponseType, false); // false = output context
-                
+
                 // Add custom description if provided
                 if (!string.IsNullOrEmpty(responseTypeAttr.Description))
                 {
                     documentation = $"{responseTypeAttr.Description}\n\n{documentation}";
                 }
-                
+
                 return documentation;
             }
-            
+
             // Fallback: Try to extract from return type (for methods that return concrete types)
             var returnType = method.ReturnType;
-            
+
             // Handle Task<T>
             if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
             {
                 returnType = returnType.GetGenericArguments()[0];
             }
-            
+
             // Handle ActionResult<T> and IActionResult
             if (returnType.IsGenericType && returnType.Name.StartsWith("ActionResult"))
             {
@@ -186,14 +186,14 @@ namespace McpFramework
                 // Can't determine response type from IActionResult - skip
                 return string.Empty;
             }
-            
+
             // Skip primitive types and common framework types for cleaner output
-            if (returnType.IsPrimitive || returnType == typeof(string) || 
+            if (returnType.IsPrimitive || returnType == typeof(string) ||
                 returnType.Name.Contains("ActionResult") || returnType.Name.Contains("IActionResult"))
             {
                 return string.Empty;
             }
-            
+
             // Generate documentation for the response type
             return GenerateTypeDocumentation(returnType, false); // false = output context
         }
@@ -201,19 +201,19 @@ namespace McpFramework
         private string GenerateTypeDocumentation(Type type, bool isInputContext)
         {
             var result = new System.Text.StringBuilder();
-            
+
             // Handle primitive types
             if (type.IsPrimitive || type == typeof(string) || type == typeof(DateTime) || type == typeof(Guid))
             {
                 return $"Returns: {GetFriendlyTypeName(type)}";
             }
-            
+
             // Handle collections
             if (type.IsGenericType && typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
             {
                 var elementType = type.GetGenericArguments()[0];
                 result.AppendLine($"Returns: Array of {GetFriendlyTypeName(elementType)}");
-                
+
                 // If the element type has MCP attributes, document it
                 if (HasMcpAttributes(elementType))
                 {
@@ -225,11 +225,11 @@ namespace McpFramework
                 }
                 return result.ToString();
             }
-            
+
             // Handle complex objects with properties
             var processor = new McpMetadataProcessor();
             var typeMetadata = processor.ExtractTypeMetadata(type, isInputContext);
-            
+
             if (!string.IsNullOrEmpty(typeMetadata.Description))
             {
                 result.AppendLine($"• {type.Name}: {typeMetadata.Description}");
@@ -238,12 +238,12 @@ namespace McpFramework
                     result.AppendLine($"  Usage: {typeMetadata.Usage}");
                 }
             }
-            
+
             // Document properties
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanRead)
                 .OrderBy(p => p.Name);
-                
+
             foreach (var prop in properties)
             {
                 var propDoc = GeneratePropertyDocumentation(prop, isInputContext);
@@ -252,7 +252,7 @@ namespace McpFramework
                     result.AppendLine($"  ◦ {propDoc}");
                 }
             }
-            
+
             return result.ToString();
         }
 
@@ -260,13 +260,13 @@ namespace McpFramework
         {
             var propType = GetFriendlyTypeName(property.PropertyType);
             var result = $"{property.Name} ({propType})";
-            
+
             // Check if property type has MCP metadata
             if (HasMcpAttributes(property.PropertyType))
             {
                 var processor = new McpMetadataProcessor();
                 var metadata = processor.ExtractTypeMetadata(property.PropertyType, isInputContext);
-                
+
                 if (!string.IsNullOrEmpty(metadata.Description))
                 {
                     result += $": {metadata.Description}";
@@ -276,7 +276,7 @@ namespace McpFramework
                     result += $" | {metadata.Usage}";
                 }
             }
-            
+
             return result;
         }
 
@@ -295,20 +295,20 @@ namespace McpFramework
             if (type == typeof(bool)) return "boolean";
             if (type == typeof(DateTime)) return "datetime";
             if (type == typeof(Guid)) return "uuid";
-            
+
             // Handle nullable types
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 return GetFriendlyTypeName(type.GetGenericArguments()[0]) + "?";
             }
-            
+
             // Handle generic collections
             if (type.IsGenericType && typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
             {
                 var elementType = type.GetGenericArguments()[0];
                 return $"{GetFriendlyTypeName(elementType)}[]";
             }
-            
+
             return type.Name;
         }
 
@@ -352,7 +352,7 @@ namespace McpFramework
 
         private bool HasFromBodyAttribute(ParameterInfo parameter)
         {
-            return parameter.GetCustomAttributes().Any(attr => 
+            return parameter.GetCustomAttributes().Any(attr =>
                 attr.GetType().Name == "FromBodyAttribute");
         }
 
@@ -383,16 +383,16 @@ namespace McpFramework
             {
                 // It's one of our typed values - extract metadata
                 var typeMetadata = _metadataProcessor.ExtractTypeMetadata(property.PropertyType);
-                
-                schema["type"] = "string"; // Most of our typed values are GUIDs (strings)
+
+                schema["type"] = ((PropertyInfo)property?.PropertyType?.GetMember("Value")?.FirstOrDefault()).PropertyType.Name ?? "string"; // Most of our typed values are GUIDs (strings)
                 schema["description"] = BuildPropertyDescription(typeMetadata, property);
-                
+
                 // Add format hint for GUIDs
-                if (typeof(McpGuidValue).IsAssignableFrom(property.PropertyType))
+                if (typeof(McpGuid).IsAssignableFrom(property.PropertyType))
                 {
                     schema["format"] = "uuid";
                 }
-                
+
                 // Add range constraints from McpRange attribute
                 var rangeAttr = property.PropertyType.GetCustomAttribute<McpRangeAttribute>();
                 if (rangeAttr != null)
@@ -400,25 +400,25 @@ namespace McpFramework
                     if (rangeAttr.Min != null) schema["minimum"] = rangeAttr.Min;
                     if (rangeAttr.Max != null) schema["maximum"] = rangeAttr.Max;
                 }
-                
+
                 // Add validation constraints from other attributes
                 var requiredAttr = property.GetCustomAttribute<McpRequiredAttribute>();
                 if (requiredAttr != null)
                 {
                     schema["required"] = true;
                 }
-                
-                // Add exists constraint information
-                var existsAttr = property.PropertyType.GetCustomAttribute<McpExistsAttribute>();
-                if (existsAttr != null)
-                {
-                    schema["validation"] = new Dictionary<string, object>
-                    {
-                        ["exists"] = true,
-                        ["entityType"] = existsAttr.EntityType ?? "Unknown",
-                        ["message"] = existsAttr.CustomMessage ?? "Entity must exist"
-                    };
-                }
+
+                /*                 // Add exists constraint information
+                                var existsAttr = property.PropertyType.GetCustomAttribute<McpExistsAttribute>();
+                                if (existsAttr != null)
+                                {
+                                    schema["validation"] = new Dictionary<string, object>
+                                    {
+                                        ["exists"] = true,
+                                        ["entityType"] = existsAttr.EntityType ?? "Unknown",
+                                        ["message"] = existsAttr.CustomMessage ?? "Entity must exist"
+                                    };
+                                } */
             }
             else if (property.PropertyType == typeof(Guid) || property.PropertyType == typeof(Guid?))
             {
@@ -453,7 +453,7 @@ namespace McpFramework
                 schema["format"] = "date-time";
                 schema["description"] = $"{property.Name} date/time parameter";
             }
-            else if (property.PropertyType.IsGenericType && 
+            else if (property.PropertyType.IsGenericType &&
                      property.PropertyType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
             {
                 var itemType = property.PropertyType.GetGenericArguments()[0];
@@ -523,7 +523,7 @@ namespace McpFramework
                 return true;
 
             // Check if property is nullable
-            if (property.PropertyType.IsGenericType && 
+            if (property.PropertyType.IsGenericType &&
                 property.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 return false;
@@ -547,16 +547,16 @@ namespace McpFramework
             {
                 // It's one of our typed values - extract metadata
                 var typeMetadata = _metadataProcessor.ExtractTypeMetadata(parameter.ParameterType);
-                
+
                 schema["type"] = "string"; // Most of our typed values are GUIDs (strings)
                 schema["description"] = BuildParameterDescription(typeMetadata, parameter);
-                
+
                 // Add format hint for GUIDs
-                if (typeof(McpGuidValue).IsAssignableFrom(parameter.ParameterType))
+                if (typeof(McpGuid).IsAssignableFrom(parameter.ParameterType))
                 {
                     schema["format"] = "uuid";
                 }
-                
+
                 // Add range constraints from McpRange attribute
                 var rangeAttr = parameter.ParameterType.GetCustomAttribute<McpRangeAttribute>();
                 if (rangeAttr != null)
@@ -564,14 +564,14 @@ namespace McpFramework
                     if (rangeAttr.Min != null) schema["minimum"] = rangeAttr.Min;
                     if (rangeAttr.Max != null) schema["maximum"] = rangeAttr.Max;
                 }
-                
+
                 // Add validation constraints from other attributes
                 var requiredAttr = parameter.GetCustomAttribute<McpRequiredAttribute>();
                 if (requiredAttr != null)
                 {
                     schema["required"] = true;
                 }
-                
+
                 // Add exists constraint information
                 var existsAttr = parameter.ParameterType.GetCustomAttribute<McpExistsAttribute>();
                 if (existsAttr != null)
@@ -635,11 +635,11 @@ namespace McpFramework
         {
             // Skip common framework types
             var typeName = parameter.ParameterType.FullName ?? parameter.ParameterType.Name;
-            
+
             var skipTypeNames = new[]
             {
                 "System.Threading.CancellationToken",
-                "Microsoft.AspNetCore.Http.HttpContext", 
+                "Microsoft.AspNetCore.Http.HttpContext",
                 "Microsoft.AspNetCore.Mvc.ControllerContext"
             };
 
@@ -653,8 +653,8 @@ namespace McpFramework
                 return true;
 
             // Check if parameter is nullable or has default value
-            if (parameter.HasDefaultValue || 
-                parameter.ParameterType.IsGenericType && 
+            if (parameter.HasDefaultValue ||
+                parameter.ParameterType.IsGenericType &&
                 parameter.ParameterType.GetGenericTypeDefinition() == typeof(Nullable<>))
             {
                 return false;
@@ -669,12 +669,12 @@ namespace McpFramework
         public async Task<McpToolsListResponse> GenerateToolsListResponseAsync(object controllerInstance)
         {
             var response = new McpToolsListResponse();
-            
+
             // Use the existing DiscoverTools method (sync) - we can make this async later if needed
             await Task.CompletedTask; // For now, just to maintain async signature
             var toolList = DiscoverTools(controllerInstance);
             response.Tools = toolList.Tools;
-            
+
             // Include metadata (glossary + domain data) 
             response._meta = new
             {
@@ -691,7 +691,7 @@ namespace McpFramework
                 version = "1.0",
                 description = "Altu MCP tools for agentic memory management"
             };
-            
+
             return response;
         }
     }
