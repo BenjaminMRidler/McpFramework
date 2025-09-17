@@ -5,30 +5,35 @@ namespace McpFramework.McpTypes
 {
     public abstract class McpTypedValue<T> : McpValue, IEquatable<McpTypedValue<T>>
     {
-        public T Value { get; protected set; }
-        
-        // Parameterless constructor for JSON deserialization
+        public T Value { get; internal set; }
+
+        // For JSON deserialization
         protected McpTypedValue()
         {
-            Value = default(T)!;
+            Value = default!;
         }
-        
+
         protected McpTypedValue(T value)
         {
             Value = value;
         }
-        
-        // Abstract methods that derived types must implement
+
+        // Derived types must provide validation
         public abstract override McpValidationResult ValidateFormat(string parameterName, string toolName);
         public abstract override McpValidationResult ValidateRequired(string parameterName, string toolName);
-        
-        // Common equality
-        public override bool Equals(McpValue? other) => other is McpTypedValue<T> typed && Equals(typed);
-        public bool Equals(McpTypedValue<T>? other) => other != null && (Value?.Equals(other.Value) ?? false);
-        
-        // Implicit conversion for API serialization
+
+        // Equality
+        public override bool Equals(McpValue? other) =>
+            other is McpTypedValue<T> typed && Equals(typed);
+
+        public bool Equals(McpTypedValue<T>? other) =>
+            other != null && EqualityComparer<T>.Default.Equals(Value, other.Value);
+
+        public override int GetHashCode() => Value?.GetHashCode() ?? 0;
+
+        // Implicit conversion (to T only here)
         public static implicit operator T(McpTypedValue<T> typedValue) => typedValue.Value;
-        
+
         public override string ToString() => Value?.ToString() ?? string.Empty;
     }
 }

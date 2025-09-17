@@ -10,9 +10,7 @@ namespace McpFramework.McpTypes
         // Parameterless constructor for JSON deserialization
         protected McpGuid() : base() { }
         
-        protected McpGuid(Guid value) : base(value)
-        {
-        }
+        protected McpGuid(Guid value) : base(value) { }
         
         // GUID-specific format validation
         public override McpValidationResult ValidateFormat(string parameterName, string toolName)

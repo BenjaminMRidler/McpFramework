@@ -1,16 +1,21 @@
-﻿using McpFramework.Attributes;
-using McpFramework.McpTypes;
+﻿using McpFramework.McpTypes;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
+namespace McpFramework;
+
+/// <summary>
+/// Ensures Swagger/OpenAPI shows MCP primitives as their underlying JSON types
+/// instead of empty objects. Keeps Swagger in sync with System.Text.Json converters.
+/// </summary>
 public class McpSchemaFilter : ISchemaFilter
 {
     public void Apply(OpenApiSchema schema, SchemaFilterContext context)
     {
         var type = context.Type;
 
-        // === Primitive wrappers ===
+        // === MCP GUID ===
         if (typeof(McpGuid).IsAssignableFrom(type))
         {
             schema.Type = "string";
@@ -19,38 +24,43 @@ public class McpSchemaFilter : ISchemaFilter
             schema.Example = new OpenApiString(Guid.NewGuid().ToString());
             schema.Properties?.Clear();
         }
+        // === MCP STRING ===
         else if (typeof(McpString).IsAssignableFrom(type))
         {
             schema.Type = "string";
             schema.Description = $"MCP string wrapper ({type.Name})";
-            schema.Example = new OpenApiString("string");
+            schema.Example = new OpenApiString("example");
             schema.Properties?.Clear();
         }
+        // === MCP INT ===
         else if (typeof(McpInt).IsAssignableFrom(type))
         {
             schema.Type = "integer";
             schema.Format = "int32";
             schema.Description = $"MCP int wrapper ({type.Name})";
-            schema.Example = new OpenApiInteger(0);
+            schema.Example = new OpenApiInteger(42);
             schema.Properties?.Clear();
         }
+        // === MCP DOUBLE/FLOAT/DECIMAL ===
         else if (typeof(McpDouble).IsAssignableFrom(type) ||
                  typeof(McpFloat).IsAssignableFrom(type) ||
                  typeof(McpDecimal).IsAssignableFrom(type))
         {
             schema.Type = "number";
-            schema.Format = "double";
+            schema.Format = "double"; // good enough for float/decimal too
             schema.Description = $"MCP numeric wrapper ({type.Name})";
-            schema.Example = new OpenApiDouble(0.0);
+            schema.Example = new OpenApiDouble(3.14);
             schema.Properties?.Clear();
         }
+        // === MCP BOOL ===
         else if (typeof(McpBool).IsAssignableFrom(type))
         {
             schema.Type = "boolean";
             schema.Description = $"MCP boolean wrapper ({type.Name})";
-            schema.Example = new OpenApiBoolean(false);
+            schema.Example = new OpenApiBoolean(true);
             schema.Properties?.Clear();
         }
+        // === MCP DATETIME ===
         else if (typeof(McpDateTime).IsAssignableFrom(type))
         {
             schema.Type = "string";
@@ -59,6 +69,7 @@ public class McpSchemaFilter : ISchemaFilter
             schema.Example = new OpenApiString(DateTime.UtcNow.ToString("o"));
             schema.Properties?.Clear();
         }
+        // === MCP COLLECTION<T> ===
         else if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(McpCollection<>))
         {
             var itemType = type.GetGenericArguments()[0];
@@ -68,65 +79,7 @@ public class McpSchemaFilter : ISchemaFilter
             schema.Properties?.Clear();
         }
 
-        // === Type-level attributes ===
-        foreach (var attr in type.GetCustomAttributes(inherit: true))
-        {
-            switch (attr)
-            {
-                case McpTypeDescriptionAttribute desc:
-                    schema.Extensions["x-mcp-description"] = new OpenApiString(desc.Description);
-                    break;
-
-                case McpTypePurposeAttribute purpose:
-                    schema.Extensions["x-mcp-purpose"] = new OpenApiObject
-                    {
-                        ["input"] = new OpenApiString(purpose.Input),
-                        ["output"] = new OpenApiString(purpose.Output)
-                    };
-                    break;
-
-                case McpTypeUsageAttribute usage:
-                    schema.Extensions["x-mcp-usage"] = new OpenApiObject
-                    {
-                        ["input"] = new OpenApiString(usage.Input ?? ""),
-                        ["output"] = new OpenApiString(usage.Output ?? "")
-                    };
-                    break;
-            }
-        }
-
-        // === Property-level attributes ===
-        if (context.MemberInfo != null)
-        {
-            foreach (var attr in context.MemberInfo.GetCustomAttributes(inherit: true))
-            {
-                switch (attr)
-                {
-                    case McpRequiredAttribute:
-                        schema.Extensions["x-mcp-required"] = new OpenApiBoolean(true);
-                        schema.Nullable = false;
-                        break;
-
-                    case McpRangeAttribute range:
-                        schema.Extensions["x-mcp-range"] = new OpenApiObject
-                        {
-                            ["min"] = new OpenApiDouble(Convert.ToDouble(range.Min)),
-                            ["max"] = new OpenApiDouble(Convert.ToDouble(range.Max)),
-                            ["inclusive"] = new OpenApiBoolean(range.Inclusive)
-                        };
-                        schema.Minimum = Convert.ToDecimal(range.Min);
-                        schema.Maximum = Convert.ToDecimal(range.Max);
-                        break;
-
-                    case McpTypeUsageAttribute usage:
-                        schema.Extensions["x-mcp-usage"] = new OpenApiObject
-                        {
-                            ["input"] = new OpenApiString(usage.Input ?? ""),
-                            ["output"] = new OpenApiString(usage.Output ?? "")
-                        };
-                        break;
-                }
-            }
-        }
+        // Keep any custom MCP attributes (type-level, property-level) attached as x-mcp-* extensions
+        // (you’ve already got this enrichment logic in place in your filters/enricher).
     }
 }

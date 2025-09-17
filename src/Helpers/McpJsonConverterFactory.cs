@@ -1,190 +1,202 @@
-﻿using McpFramework.McpTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using McpFramework.McpTypes;
 
-namespace McpFramework;
-
-public class McpJsonConverterFactory : JsonConverterFactory
+namespace McpFramework
 {
-    public override bool CanConvert(Type typeToConvert)
+    public class McpJsonConverterFactory : JsonConverterFactory
     {
-        if (typeof(McpValue).IsAssignableFrom(typeToConvert)) return true;
-        if (IsMcpCollection(typeToConvert)) return true;
-        return false;
-    }
-
-    public override JsonConverter CreateConverter(Type type, JsonSerializerOptions options)
-    {
-        // Handle collections
-        if (IsMcpCollection(type, out var elementType))
+        public override bool CanConvert(Type typeToConvert)
         {
-            return (JsonConverter)Activator.CreateInstance(
-                typeof(CollectionConverter<,>).MakeGenericType(type, elementType))!;
-        }
+            // Primitives
+            if (typeof(McpGuid).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpString).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpInt).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpDouble).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpDecimal).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpFloat).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpBool).IsAssignableFrom(typeToConvert)) return true;
+            if (typeof(McpDateTime).IsAssignableFrom(typeToConvert)) return true;
 
-        // Handle primitives
-        var mcpBase = FindMcpTypedValueBase(type);
-        if (mcpBase != null)
-        {
-            var innerType = mcpBase.GetGenericArguments()[0];
-
-            if (innerType == typeof(Guid))
-                return (JsonConverter)Activator.CreateInstance(typeof(GuidConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(int))
-                return (JsonConverter)Activator.CreateInstance(typeof(IntConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(double))
-                return (JsonConverter)Activator.CreateInstance(typeof(DoubleConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(decimal))
-                return (JsonConverter)Activator.CreateInstance(typeof(DecimalConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(float))
-                return (JsonConverter)Activator.CreateInstance(typeof(FloatConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(DateTime?))
-                return (JsonConverter)Activator.CreateInstance(typeof(DateTimeConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(string))
-                return (JsonConverter)Activator.CreateInstance(typeof(StringConverter<>).MakeGenericType(type))!;
-            if (innerType == typeof(bool))
-                return (JsonConverter)Activator.CreateInstance(typeof(BoolConverter<>).MakeGenericType(type))!;
-        }
-
-        throw new NotSupportedException($"No converter for {type}");
-    }
-
-    // === Helpers ===
-    private static Type? FindMcpTypedValueBase(Type type)
-    {
-        var current = type;
-        while (current != null && current != typeof(object))
-        {
-            if (current.IsGenericType &&
-                current.GetGenericTypeDefinition() == typeof(McpTypedValue<>))
-            {
-                return current;
-            }
-            current = current.BaseType;
-        }
-        return null;
-    }
-
-    private static bool IsMcpCollection(Type type) =>
-        IsMcpCollection(type, out _);
-
-    private static bool IsMcpCollection(Type type, out Type elementType)
-    {
-        var current = type;
-        while (current != null && current != typeof(object))
-        {
-            if (current.IsGenericType &&
-                current.GetGenericTypeDefinition() == typeof(McpCollection<>))
-            {
-                elementType = current.GetGenericArguments()[0];
+            // Collections
+            if (typeToConvert.IsGenericType &&
+                typeToConvert.GetGenericTypeDefinition() == typeof(McpCollection<>))
                 return true;
+
+            return false;
+        }
+
+        public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+        {
+            // Handle primitives
+            if (typeof(McpGuid).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpGuidConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpString).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpStringConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpInt).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpIntConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpDouble).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpDoubleConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpDecimal).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpDecimalConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpFloat).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpFloatConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpBool).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpBoolConverter<>).MakeGenericType(typeToConvert))!;
+            if (typeof(McpDateTime).IsAssignableFrom(typeToConvert))
+                return (JsonConverter)Activator.CreateInstance(typeof(McpDateTimeConverter<>).MakeGenericType(typeToConvert))!;
+
+            // Handle collections
+            if (typeToConvert.IsGenericType &&
+                typeToConvert.GetGenericTypeDefinition() == typeof(McpCollection<>))
+            {
+                var itemType = typeToConvert.GetGenericArguments()[0];
+                return (JsonConverter)Activator.CreateInstance(
+                    typeof(McpCollectionConverter<,>).MakeGenericType(typeToConvert, itemType))!;
             }
-            current = current.BaseType;
-        }
-        elementType = null!;
-        return false;
-    }
 
-    // === Primitive converters ===
-    private class GuidConverter<T> : JsonConverter<T> where T : McpTypedValue<Guid>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetGuid())!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteStringValue(value.Value);
-    }
-
-    private class IntConverter<T> : JsonConverter<T> where T : McpTypedValue<int>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetInt32())!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteNumberValue(value.Value);
-    }
-
-    private class DoubleConverter<T> : JsonConverter<T> where T : McpTypedValue<double>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetDouble())!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteNumberValue(value.Value);
-    }
-
-    private class DecimalConverter<T> : JsonConverter<T> where T : McpTypedValue<decimal>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetDecimal())!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteNumberValue(value.Value);
-    }
-
-    private class FloatConverter<T> : JsonConverter<T> where T : McpTypedValue<float>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetSingle())!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteNumberValue(value.Value);
-    }
-
-    private class DateTimeConverter<T> : JsonConverter<T> where T : McpTypedValue<DateTime?>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            if (reader.TokenType == JsonTokenType.Null)
-                return (T)Activator.CreateInstance(typeof(T), (DateTime?)null)!;
-
-            return (T)Activator.CreateInstance(typeof(T), reader.GetDateTime())!;
+            throw new NotSupportedException($"No converter for {typeToConvert}");
         }
 
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+        // --- Converters ---
+        private class McpGuidConverter<T> : JsonConverter<T> where T : McpGuid, new()
         {
-            if (value?.Value == null)
-                writer.WriteNullValue();
-            else
-                writer.WriteStringValue(value.Value.Value);
-        }
-    }
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetGuid() };
 
-    private class StringConverter<T> : JsonConverter<T> where T : McpTypedValue<string>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetString() ?? string.Empty)!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteStringValue(value.Value);
-    }
-
-    private class BoolConverter<T> : JsonConverter<T> where T : McpTypedValue<bool>
-    {
-        public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-            (T)Activator.CreateInstance(typeof(T), reader.GetBoolean())!;
-
-        public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options) =>
-            writer.WriteBooleanValue(value.Value);
-    }
-
-    // === Collection converter ===
-    private class CollectionConverter<TCollection, TElement> : JsonConverter<TCollection>
-        where TCollection : McpCollection<TElement>
-        where TElement : class
-    {
-        public override TCollection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-        {
-            var items = JsonSerializer.Deserialize<List<TElement>>(ref reader, options) ?? new List<TElement>();
-            return (TCollection)Activator.CreateInstance(typeToConvert, items)!;
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value?.Value != Guid.Empty)
+                    writer.WriteStringValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
         }
 
-        public override void Write(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options)
+        private class McpStringConverter<T> : JsonConverter<T> where T : McpString, new()
         {
-            var items = value.AsEnumerable();
-            JsonSerializer.Serialize(writer, items, options);
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetString() ?? string.Empty };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (!string.IsNullOrEmpty(value?.Value))
+                    writer.WriteStringValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
+        }
+
+        private class McpIntConverter<T> : JsonConverter<T> where T : McpInt, new()
+        {
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetInt32() };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value != null)
+                    writer.WriteNumberValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
+        }
+
+
+        private class McpDoubleConverter<T> : JsonConverter<T> where T : McpDouble, new()
+        {
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetDouble() };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value != null)
+                    writer.WriteNumberValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
+        }
+
+        private class McpDecimalConverter<T> : JsonConverter<T> where T : McpDecimal, new()
+        {
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetDecimal() };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value != null)
+                    writer.WriteNumberValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
+        }
+
+        private class McpFloatConverter<T> : JsonConverter<T> where T : McpFloat, new()
+        {
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = (float)reader.GetDouble() };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value != null)
+                    writer.WriteNumberValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
+        }
+
+
+        private class McpBoolConverter<T> : JsonConverter<T> where T : McpBool, new()
+        {
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetBoolean() };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value != null)
+                    writer.WriteBooleanValue(value.Value);
+                else
+                    writer.WriteNullValue();
+            }
+        }
+
+
+        private class McpDateTimeConverter<T> : JsonConverter<T> where T : McpDateTime, new()
+        {
+            public override T? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+                => new T { Value = reader.GetDateTime() };
+
+            public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
+            {
+                if (value?.Value is DateTime dt)
+                {
+                    // Use ISO-8601 round-trip format
+                    writer.WriteStringValue(dt.ToString("o"));
+                }
+                else
+                {
+                    writer.WriteNullValue();
+                }
+            }
+        }
+
+        private class McpCollectionConverter<TCollection, TItem> : JsonConverter<TCollection>
+            where TCollection : McpCollection<TItem>, new()
+            where TItem : class
+        {
+            public override TCollection? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+            {
+                var list = JsonSerializer.Deserialize<List<TItem>>(ref reader, options) ?? new List<TItem>();
+                var collection = new TCollection();
+                collection.AddRange(list);
+                return collection;
+            }
+
+            public override void Write(Utf8JsonWriter writer, TCollection value, JsonSerializerOptions options)
+            {
+                JsonSerializer.Serialize(writer, value.AsEnumerable(), options);
+            }
         }
     }
 }
